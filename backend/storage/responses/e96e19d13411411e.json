@@ -1,0 +1,33 @@
+{
+  "id": "e96e19d13411411e",
+  "surveyId": "44edf819e0fb48c4",
+  "accessToken": "5e1aa02820b548fd",
+  "answers": [
+    {
+      "questionId": "q1",
+      "value": "a"
+    },
+    {
+      "questionId": "q2",
+      "value": [
+        "a",
+        "b",
+        "d"
+      ]
+    },
+    {
+      "questionId": "q3",
+      "value": "整体使用体验不错，继续加油！"
+    },
+    {
+      "questionId": "q4",
+      "value": 5
+    }
+  ],
+  "userInfo": {
+    "ip": "::1",
+    "userAgent": "curl/8.7.1"
+  },
+  "submittedAt": 1781050324199,
+  "submittedAtStr": "2026-06-10 00:12:04"
+}

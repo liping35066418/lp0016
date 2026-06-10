@@ -1,0 +1,82 @@
+{
+  "id": "44edf819e0fb48c4",
+  "title": "用户满意度调查",
+  "description": "请花几分钟完成此问卷，帮助我们改进服务",
+  "questions": [
+    {
+      "id": "q1",
+      "type": "radio",
+      "title": "您的年龄段是？",
+      "required": true,
+      "options": [
+        {
+          "label": "18岁以下",
+          "value": "a"
+        },
+        {
+          "label": "18-30岁",
+          "value": "b"
+        },
+        {
+          "label": "31-50岁",
+          "value": "c"
+        },
+        {
+          "label": "50岁以上",
+          "value": "d"
+        }
+      ],
+      "order": 0
+    },
+    {
+      "id": "q2",
+      "type": "checkbox",
+      "title": "您使用过我们的哪些功能？",
+      "required": true,
+      "minSelect": 1,
+      "maxSelect": 3,
+      "options": [
+        {
+          "label": "数据分析",
+          "value": "a"
+        },
+        {
+          "label": "报表导出",
+          "value": "b"
+        },
+        {
+          "label": "团队协作",
+          "value": "c"
+        },
+        {
+          "label": "自定义配置",
+          "value": "d"
+        }
+      ],
+      "order": 1
+    },
+    {
+      "id": "q3",
+      "type": "text",
+      "title": "您对产品有什么建议？",
+      "required": false,
+      "minLength": 0,
+      "maxLength": 500,
+      "order": 2
+    },
+    {
+      "id": "q4",
+      "type": "rating",
+      "title": "请为我们的整体服务评分",
+      "required": true,
+      "maxValue": 5,
+      "order": 3
+    }
+  ],
+  "status": "published",
+  "accessLink": "http://localhost:3616/survey/5e1aa02820b548fd",
+  "accessToken": "5e1aa02820b548fd",
+  "createdAt": 1781050293061,
+  "updatedAt": 1781050300419,
+  "publishedAt": 1781050300419
+}

@@ -1,0 +1,17 @@
+{
+  "surveys": [
+    {
+      "id": "44edf819e0fb48c4",
+      "title": "用户满意度调查",
+      "description": "请花几分钟完成此问卷，帮助我们改进服务",
+      "status": "published",
+      "accessLink": "http://localhost:3616/survey/5e1aa02820b548fd",
+      "accessToken": "5e1aa02820b548fd",
+      "questionCount": 4,
+      "responseCount": 5,
+      "createdAt": 1781050293061,
+      "updatedAt": 1781050324199,
+      "publishedAt": 1781050300419
+    }
+  ]
+}
