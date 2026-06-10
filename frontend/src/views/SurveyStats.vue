@@ -430,15 +430,22 @@ function getAnswerDisplay(qid, type) {
   const a = detailData.value.answers.find(x => x.questionId === qid);
   if (!a) return '<未作答>';
   const q = detailQuestions.value.find(x => x.id === qid);
-  if (type === 'text') return a.value || '<空>';
-  if (type === 'rating') return (typeof a.value === 'number' ? a.value : 0) + ' 分';
+  if (type === 'text') {
+    if (!a.value || String(a.value).trim() === '') return '<未作答>';
+    return a.value;
+  }
+  if (type === 'rating') {
+    if (typeof a.value !== 'number' || a.value < 1) return '<未作答>';
+    return a.value + ' 分';
+  }
   if (type === 'radio') {
-    if (!q) return String(a.value ?? '<未作答>');
+    if (a.value === '' || a.value === null || a.value === undefined) return '<未作答>';
+    if (!q) return String(a.value);
     const opt = (q.options || []).find(o => o.value === a.value);
-    return opt ? opt.label : String(a.value ?? '<未作答>');
+    return opt ? opt.label : String(a.value);
   }
   if (type === 'checkbox') {
-    if (!Array.isArray(a.value) || a.value.length === 0) return '<未选择>';
+    if (!Array.isArray(a.value) || a.value.length === 0) return '<未作答>';
     return a.value.map(v => {
       const opt = (q?.options || []).find(o => o.value === v);
       return opt ? opt.label : String(v);

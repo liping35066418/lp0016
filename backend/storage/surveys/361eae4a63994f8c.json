@@ -1,0 +1,49 @@
+{
+  "id": "361eae4a63994f8c",
+  "title": "2",
+  "description": "2",
+  "questions": [
+    {
+      "id": "q_8lv5tshs",
+      "type": "radio",
+      "title": "2",
+      "required": true,
+      "order": 0,
+      "options": [
+        {
+          "label": "选项A",
+          "value": "o_kbmkkw"
+        },
+        {
+          "label": "选项B",
+          "value": "o_ixghyw"
+        }
+      ]
+    },
+    {
+      "id": "q_wycvlfgq",
+      "type": "checkbox",
+      "title": "33",
+      "required": true,
+      "order": 1,
+      "options": [
+        {
+          "label": "选项A",
+          "value": "o_arcpm4"
+        },
+        {
+          "label": "选项B",
+          "value": "o_gkr53u"
+        }
+      ],
+      "minSelect": 0,
+      "maxSelect": 0
+    }
+  ],
+  "status": "published",
+  "accessLink": "http://localhost:3616/survey/2bb9adde1acf41e1",
+  "accessToken": "2bb9adde1acf41e1",
+  "createdAt": 1781076810657,
+  "updatedAt": 1781076810670,
+  "publishedAt": 1781076810670
+}

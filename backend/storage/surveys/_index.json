@@ -8,10 +8,23 @@
       "accessLink": "http://localhost:3616/survey/5e1aa02820b548fd",
       "accessToken": "5e1aa02820b548fd",
       "questionCount": 4,
-      "responseCount": 5,
+      "responseCount": 6,
       "createdAt": 1781050293061,
-      "updatedAt": 1781050324199,
-      "publishedAt": 1781050300419
+      "updatedAt": 1781076744242,
+      "publishedAt": 1781076695609
+    },
+    {
+      "id": "361eae4a63994f8c",
+      "title": "2",
+      "description": "2",
+      "status": "published",
+      "accessLink": "http://localhost:3616/survey/2bb9adde1acf41e1",
+      "accessToken": "2bb9adde1acf41e1",
+      "questionCount": 2,
+      "responseCount": 0,
+      "createdAt": 1781076810657,
+      "updatedAt": 1781076810670,
+      "publishedAt": 1781076810670
     }
   ]
 }

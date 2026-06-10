@@ -5,6 +5,15 @@ const fs = require('fs');
 const logger = require('../utils/logger');
 const { readJSON, surveyDir, responseDir, responseIndexFile } = require('../utils/storage');
 
+function isEmptyAnswer(value, type) {
+  if (value === null || value === undefined) return true;
+  if (type === 'text' && String(value).trim() === '') return true;
+  if (type === 'radio' && (value === '' || value === null || value === undefined)) return true;
+  if (type === 'checkbox' && (!Array.isArray(value) || value.length === 0)) return true;
+  if (type === 'rating' && (typeof value !== 'number' || value < 1)) return true;
+  return false;
+}
+
 router.get('/survey/:surveyId', (req, res) => {
   try {
     const { surveyId } = req.params;
@@ -40,10 +49,11 @@ router.get('/survey/:surveyId', (req, res) => {
         questionTitle: q.title,
         questionType: q.type,
         totalAnswered: 0,
-        skipped: responses.length - 0
+        skipped: 0
       };
 
-      const answersOfQ = responses.map(r => r.answers.find(a => a.questionId === q.id)).filter(Boolean);
+      const answersOfQ = responses.map(r => r.answers.find(a => a.questionId === q.id))
+        .filter(a => a && !isEmptyAnswer(a.value, q.type));
       stat.totalAnswered = answersOfQ.length;
       stat.skipped = responses.length - answersOfQ.length;
 
@@ -52,7 +62,7 @@ router.get('/survey/:surveyId', (req, res) => {
           const counts = {};
           q.options.forEach(o => { counts[o.value] = { label: o.label, value: o.value, count: 0 }; });
           answersOfQ.forEach(a => {
-            if (a.value !== undefined && a.value !== null && counts[a.value]) {
+            if (a.value !== undefined && a.value !== null && a.value !== '' && counts[a.value]) {
               counts[a.value].count++;
             }
           });
@@ -63,7 +73,7 @@ router.get('/survey/:surveyId', (req, res) => {
           const counts = {};
           q.options.forEach(o => { counts[o.value] = { label: o.label, value: o.value, count: 0 }; });
           answersOfQ.forEach(a => {
-            if (Array.isArray(a.value)) {
+            if (Array.isArray(a.value) && a.value.length > 0) {
               a.value.forEach(v => {
                 if (counts[v]) counts[v].count++;
               });
@@ -77,10 +87,10 @@ router.get('/survey/:surveyId', (req, res) => {
           const dist = Array(max).fill(0).map((_, i) => ({ rating: i + 1, count: 0 }));
           let sum = 0, count = 0;
           answersOfQ.forEach(a => {
-            if (typeof a.value === 'number') {
+            if (typeof a.value === 'number' && a.value >= 1) {
               sum += a.value;
               count++;
-              if (a.value >= 1 && a.value <= max) {
+              if (a.value <= max) {
                 dist[a.value - 1].count++;
               }
             }

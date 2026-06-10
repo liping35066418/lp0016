@@ -233,13 +233,20 @@ async function onSubmit() {
   const payload = {
     surveyId: survey.value.id,
     accessToken: route.params.token,
-    answers: survey.value.questions.map(q => {
-      let value;
-      if (q.type === 'checkbox') value = checkboxAnswers[q.id] || [];
-      else if (q.type === 'rating') value = answers[q.id] ? Number(answers[q.id]) : 0;
-      else value = answers[q.id] || '';
-      return { questionId: q.id, value };
-    })
+    answers: survey.value.questions
+      .map(q => {
+        let value;
+        if (q.type === 'checkbox') value = checkboxAnswers[q.id] || [];
+        else if (q.type === 'rating') value = answers[q.id] ? Number(answers[q.id]) : null;
+        else value = answers[q.id] ?? null;
+        return { questionId: q.id, value };
+      })
+      .filter(a => {
+        if (a.value === null || a.value === undefined) return false;
+        if (typeof a.value === 'string' && a.value.trim() === '') return false;
+        if (Array.isArray(a.value) && a.value.length === 0) return false;
+        return true;
+      })
   };
 
   try {

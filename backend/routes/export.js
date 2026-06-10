@@ -6,6 +6,15 @@ const XLSX = require('xlsx');
 const logger = require('../utils/logger');
 const { readJSON, surveyDir, responseDir, responseIndexFile } = require('../utils/storage');
 
+function isEmptyAnswer(value, type) {
+  if (value === null || value === undefined) return true;
+  if (type === 'text' && String(value).trim() === '') return true;
+  if (type === 'radio' && (value === '' || value === null || value === undefined)) return true;
+  if (type === 'checkbox' && (!Array.isArray(value) || value.length === 0)) return true;
+  if (type === 'rating' && (typeof value !== 'number' || value < 1)) return true;
+  return false;
+}
+
 router.get('/survey/:surveyId', (req, res) => {
   try {
     const { surveyId } = req.params;
@@ -47,7 +56,7 @@ router.get('/survey/:surveyId', (req, res) => {
       survey.questions.forEach(q => {
         const answer = resp.answers.find(a => a.questionId === q.id);
         let display = '';
-        if (answer) {
+        if (answer && !isEmptyAnswer(answer.value, q.type)) {
           switch (q.type) {
             case 'radio': {
               const opt = (q.options || []).find(o => o.value === answer.value);
@@ -118,15 +127,15 @@ router.get('/survey/:surveyId', (req, res) => {
             for (let i = 1; i <= max; i++) counts[i] = { label: `${i}分`, count: 0 };
             responses.forEach(r => {
               const a = r.answers.find(an => an.questionId === q.id);
-              if (a && typeof a.value === 'number' && counts[a.value]) counts[a.value].count++;
+              if (a && !isEmptyAnswer(a.value, q.type) && typeof a.value === 'number' && counts[a.value]) counts[a.value].count++;
             });
           } else {
             q.options.forEach(o => { counts[o.value] = { label: o.label, count: 0 }; });
             responses.forEach(r => {
               const a = r.answers.find(an => an.questionId === q.id);
-              if (a) {
+              if (a && !isEmptyAnswer(a.value, q.type)) {
                 if (q.type === 'radio' && counts[a.value]) counts[a.value].count++;
-                if (q.type === 'checkbox' && Array.isArray(a.value)) {
+                if (q.type === 'checkbox' && Array.isArray(a.value) && a.value.length > 0) {
                   a.value.forEach(v => { if (counts[v]) counts[v].count++; });
                 }
               }

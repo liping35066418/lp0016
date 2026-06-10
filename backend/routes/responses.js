@@ -5,6 +5,15 @@ const fs = require('fs');
 const logger = require('../utils/logger');
 const { readJSON, writeJSON, generateId, surveyDir, responseDir, responseIndexFile, surveyIndexFile } = require('../utils/storage');
 
+function isEmptyAnswer(value, type) {
+  if (value === null || value === undefined) return true;
+  if (type === 'text' && String(value).trim() === '') return true;
+  if (type === 'radio' && (value === '' || value === null || value === undefined)) return true;
+  if (type === 'checkbox' && (!Array.isArray(value) || value.length === 0)) return true;
+  if (type === 'rating' && (typeof value !== 'number' || value < 1)) return true;
+  return false;
+}
+
 function validateResponse(survey, answers) {
   const errors = [];
   const answerMap = {};
@@ -15,29 +24,13 @@ function validateResponse(survey, answers) {
     const questionNo = `第${idx + 1}题`;
 
     if (q.required) {
-      if (!answer) {
-        errors.push(`${questionNo}为必填项`);
-        return;
-      }
-      if (q.type === 'text' && (!answer.value || answer.value.toString().trim() === '')) {
-        errors.push(`${questionNo}为必填项`);
-        return;
-      }
-      if (q.type === 'radio' && (answer.value === undefined || answer.value === null || answer.value === '')) {
-        errors.push(`${questionNo}为必填项`);
-        return;
-      }
-      if (q.type === 'checkbox' && (!Array.isArray(answer.value) || answer.value.length === 0)) {
-        errors.push(`${questionNo}为必填项`);
-        return;
-      }
-      if (q.type === 'rating' && (typeof answer.value !== 'number' || answer.value < 1)) {
+      if (!answer || isEmptyAnswer(answer.value, q.type)) {
         errors.push(`${questionNo}为必填项`);
         return;
       }
     }
 
-    if (!answer) return;
+    if (!answer || isEmptyAnswer(answer.value, q.type)) return;
 
     switch (q.type) {
       case 'text': {
@@ -75,9 +68,9 @@ function validateResponse(survey, answers) {
         break;
       }
       case 'rating': {
-        if (typeof answer.value === 'number') {
+        if (typeof answer.value === 'number' && answer.value >= 1) {
           const max = q.maxValue || 5;
-          if (answer.value < 1 || answer.value > max) {
+          if (answer.value > max) {
             errors.push(`${questionNo}分值必须在1-${max}之间`);
           }
         }
