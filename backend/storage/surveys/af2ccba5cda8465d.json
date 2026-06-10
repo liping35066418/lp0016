@@ -1,0 +1,56 @@
+{
+  "id": "af2ccba5cda8465d",
+  "title": "222",
+  "description": "2222www  ",
+  "questions": [
+    {
+      "id": "q_lqwtki88",
+      "type": "radio",
+      "title": "2222",
+      "required": true,
+      "order": 0,
+      "options": [
+        {
+          "label": "选项A",
+          "value": "o_3t25jw"
+        },
+        {
+          "label": "选项B",
+          "value": "o_hrbkpm"
+        }
+      ]
+    },
+    {
+      "id": "q_x7fiog4j",
+      "type": "text",
+      "title": "222",
+      "required": false,
+      "order": 1,
+      "minLength": 0,
+      "maxLength": 0
+    },
+    {
+      "id": "q_ww1h74cl",
+      "type": "radio",
+      "title": "3323",
+      "required": true,
+      "order": 2,
+      "options": [
+        {
+          "label": "选项A",
+          "value": "o_f2qoaq"
+        },
+        {
+          "label": "选项B",
+          "value": "o_n3m0tb"
+        }
+      ]
+    }
+  ],
+  "status": "published",
+  "accessLink": "http://localhost:3616/survey/3af34b38d9214248",
+  "accessToken": "3af34b38d9214248",
+  "createdAt": 1781081779761,
+  "updatedAt": 1781081907340,
+  "publishedAt": 1781081907340
+}

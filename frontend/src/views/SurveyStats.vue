@@ -22,18 +22,34 @@
         <div class="page-container mb-6">
           <div class="flex justify-between items-center mb-4">
             <h2 style="font-size:18px; font-weight:600;">时间筛选</h2>
-            <button class="btn btn-sm btn-secondary" @click="clearFilter">清除筛选</button>
+            <button class="btn btn-sm btn-secondary" @click="clearTimeFilter">清除时间</button>
           </div>
           <div class="flex gap-3">
             <div style="flex:1;">
               <label class="form-label" style="font-size:13px;">开始日期</label>
-              <input type="date" v-model="startTime" @change="loadStats"/>
+              <input type="date" v-model="startTime" @change="onFilterChange"/>
             </div>
             <div style="flex:1;">
               <label class="form-label" style="font-size:13px;">结束日期</label>
-              <input type="date" v-model="endTime" @change="loadStats"/>
+              <input type="date" v-model="endTime" @change="onFilterChange"/>
             </div>
           </div>
+        </div>
+
+        <div v-if="activeFilters.length > 0" class="page-container mb-6">
+          <div class="flex justify-between items-center mb-3">
+            <h2 style="font-size:18px; font-weight:600;">已选筛选条件</h2>
+            <button class="btn btn-sm btn-secondary" @click="clearAllFilters">清除全部筛选</button>
+          </div>
+          <div style="display:flex; flex-wrap:wrap; gap:8px;">
+            <div v-for="(f, idx) in activeFilters" :key="idx"
+                 class="filter-tag"
+                 @click="removeFilter(idx)">
+              <span class="filter-tag-text">{{ getFilterLabel(f) }}</span>
+              <span class="filter-tag-close">✕</span>
+            </div>
+          </div>
+          <p style="font-size:12px; color:#6b7280; margin-top:8px;">💡 点击选项可下钻筛选，点击标签可移除该条件</p>
         </div>
 
         <div class="page-container mb-6">
@@ -120,11 +136,14 @@
 
               <div v-if="qs.questionType === 'radio' || qs.questionType === 'checkbox'">
                 <div class="flex" style="gap:16px; flex-wrap:wrap;">
-                  <div :ref="el => setChartRef(qs.questionId, 'pie', el)" style="width:200px; height:200px;"></div>
-                  <div :ref="el => setChartRef(qs.questionId, 'bar', el)" style="flex:1; min-width:200px; height:200px;"></div>
+                  <div :ref="el => setChartRef(qs.questionId, 'pie', el)" style="width:200px; height:200px; cursor:pointer;"></div>
+                  <div :ref="el => setChartRef(qs.questionId, 'bar', el)" style="flex:1; min-width:200px; height:200px; cursor:pointer;"></div>
                 </div>
                 <div style="margin-top:12px; display:flex; flex-direction:column; gap:6px;">
-                  <div v-for="item in qs.data" :key="item.value" style="display:flex; align-items:center; gap:10px;">
+                  <div v-for="item in qs.data" :key="item.value"
+                       class="option-bar"
+                       :class="{ 'option-bar-active': isFilterActive(qs.questionId, item.value) }"
+                       @click="toggleFilter(qs.questionId, item.value, qs.questionType, qs.questionTitle, item.label)">
                     <span style="flex:0 0 100px; font-size:13px; color:#374151; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ item.label }}</span>
                     <div style="flex:1; height:22px; background:#f3f4f6; border-radius:4px; overflow:hidden; position:relative;">
                       <div style="height:100%; background:linear-gradient(90deg, #667eea 0%, #764ba2 100%); border-radius:4px; transition:width 0.5s;"
@@ -133,6 +152,7 @@
                         {{ item.count }} 次 ({{ getPercent(item.count, qs.totalAnswered).toFixed(1) }}%)
                       </span>
                     </div>
+                    <span v-if="isFilterActive(qs.questionId, item.value)" style="font-size:12px; color:#10b981; font-weight:600;">已筛选</span>
                   </div>
                 </div>
               </div>
@@ -201,8 +221,11 @@ const statsData = ref(null);
 const startTime = ref('');
 const endTime = ref('');
 
+const activeFilters = ref([]);
+
 const trendChartRef = ref(null);
 const chartRefs = reactive({});
+const chartInstances = reactive({});
 
 const responseList = reactive({ list: [], total: 0 });
 const responsePage = ref(1);
@@ -249,12 +272,69 @@ function setChartRef(qid, type, el) {
   if (el) chartRefs[key] = el;
 }
 
+function isFilterActive(questionId, optionValue) {
+  return activeFilters.value.some(f => f.questionId === questionId && f.optionValue === optionValue);
+}
+
+function getFilterLabel(f) {
+  return `${f.questionTitle || f.questionId}: ${f.optionLabel || f.optionValue}`;
+}
+
+function toggleFilter(questionId, optionValue, questionType, questionTitle, optionLabel) {
+  const idx = activeFilters.value.findIndex(f => f.questionId === questionId && f.optionValue === optionValue);
+  if (idx !== -1) {
+    activeFilters.value.splice(idx, 1);
+  } else {
+    activeFilters.value.push({
+      questionId,
+      optionValue,
+      questionType,
+      questionTitle,
+      optionLabel
+    });
+  }
+  responsePage.value = 1;
+  onFilterChange();
+}
+
+function removeFilter(idx) {
+  activeFilters.value.splice(idx, 1);
+  responsePage.value = 1;
+  onFilterChange();
+}
+
+function clearAllFilters() {
+  activeFilters.value = [];
+  startTime.value = '';
+  endTime.value = '';
+  responsePage.value = 1;
+  onFilterChange();
+}
+
+function clearTimeFilter() {
+  startTime.value = '';
+  endTime.value = '';
+  responsePage.value = 1;
+  onFilterChange();
+}
+
+function onFilterChange() {
+  loadStats();
+  loadResponseList();
+}
+
+function getFiltersParam() {
+  if (activeFilters.value.length === 0) return null;
+  return encodeURIComponent(JSON.stringify(activeFilters.value));
+}
+
 async function loadStats() {
   loading.value = true;
   try {
     const params = {};
     if (startTime.value) params.startTime = startTime.value;
     if (endTime.value) params.endTime = endTime.value;
+    if (activeFilters.value.length > 0) params.filters = JSON.stringify(activeFilters.value);
     const res = await api.get(`/stats/survey/${surveyId.value}`, { params });
     if (res.success) {
       statsData.value = res.data;
@@ -307,7 +387,7 @@ function renderTrendChart() {
   window.addEventListener('resize', () => instance.resize());
 }
 
-function renderPieChart(el, data) {
+function renderPieChart(el, data, qs) {
   const total = data.reduce((s, d) => s + d.count, 0) || 1;
   const instance = echarts.init(el);
   instance.setOption({
@@ -327,10 +407,18 @@ function renderPieChart(el, data) {
       })).filter(d => d.value > 0)
     }]
   });
+  instance.off('click');
+  instance.on('click', (params) => {
+    const item = data.find(d => d.label === params.name);
+    if (item && qs) {
+      toggleFilter(qs.questionId, item.value, qs.questionType, qs.questionTitle, item.label);
+    }
+  });
   window.addEventListener('resize', () => instance.resize());
+  return instance;
 }
 
-function renderBarChart(el, data, catName = '选项') {
+function renderBarChart(el, data, catName = '选项', qs = null) {
   const instance = echarts.init(el);
   instance.setOption({
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
@@ -361,7 +449,18 @@ function renderBarChart(el, data, catName = '选项') {
       label: { show: true, position: 'top', fontSize: 11 }
     }]
   });
+  if (qs && (qs.questionType === 'radio' || qs.questionType === 'checkbox')) {
+    instance.off('click');
+    instance.on('click', (params) => {
+      const label = params.name;
+      const item = data.find(d => d.label === label);
+      if (item) {
+        toggleFilter(qs.questionId, item.value, qs.questionType, qs.questionTitle, item.label);
+      }
+    });
+  }
   window.addEventListener('resize', () => instance.resize());
+  return instance;
 }
 
 function renderCharts() {
@@ -372,21 +471,23 @@ function renderCharts() {
       if (qs.questionType === 'radio' || qs.questionType === 'checkbox') {
         const pieEl = chartRefs[qs.questionId + '_pie'];
         const barEl = chartRefs[qs.questionId + '_bar'];
-        if (pieEl) renderPieChart(pieEl, qs.data || []);
-        if (barEl) renderBarChart(barEl, qs.data || []);
+        if (pieEl) {
+          const inst = renderPieChart(pieEl, qs.data || [], qs);
+          chartInstances[qs.questionId + '_pie'] = inst;
+        }
+        if (barEl) {
+          const inst = renderBarChart(barEl, qs.data || [], '选项', qs);
+          chartInstances[qs.questionId + '_bar'] = inst;
+        }
       } else if (qs.questionType === 'rating') {
         const barEl = chartRefs[qs.questionId + '_bar'];
-        if (barEl) renderBarChart(barEl, (qs.data || []).map(d => ({ label: d.rating + '分', count: d.count })), '分值');
+        if (barEl) {
+          const inst = renderBarChart(barEl, (qs.data || []).map(d => ({ label: d.rating + '分', count: d.count })), '分值');
+          chartInstances[qs.questionId + '_bar'] = inst;
+        }
       }
     });
   }
-}
-
-function clearFilter() {
-  startTime.value = '';
-  endTime.value = '';
-  loadStats();
-  loadResponseList();
 }
 
 async function loadResponseList() {
@@ -394,6 +495,7 @@ async function loadResponseList() {
     const params = { page: responsePage.value, pageSize: responsePageSize };
     if (startTime.value) params.startTime = startTime.value;
     if (endTime.value) params.endTime = endTime.value;
+    if (activeFilters.value.length > 0) params.filters = JSON.stringify(activeFilters.value);
     const res = await api.get(`/responses/survey/${surveyId.value}`, { params });
     if (res.success) {
       responseList.list = res.data.list;
@@ -458,6 +560,7 @@ function exportReport(format) {
   let url = `/api/export/survey/${surveyId.value}?format=${format}`;
   if (startTime.value) url += `&startTime=${startTime.value}`;
   if (endTime.value) url += `&endTime=${endTime.value}`;
+  if (activeFilters.value.length > 0) url += `&filters=${encodeURIComponent(JSON.stringify(activeFilters.value))}`;
   const link = document.createElement('a');
   link.href = url;
   link.style.display = 'none';
@@ -509,4 +612,46 @@ watch([startTime, endTime], () => {
 .tag-checkbox { background:#dcfce7; color:#166534; }
 .tag-text { background:#fef9c3; color:#854d0e; }
 .tag-rating { background:#fce7f3; color:#9d174d; }
+
+.filter-tag {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 10px;
+  background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color:white;
+  border-radius:16px;
+  font-size:12px;
+  cursor:pointer;
+  transition:all 0.2s;
+  user-select:none;
+}
+.filter-tag:hover {
+  opacity:0.85;
+  transform:translateY(-1px);
+}
+.filter-tag-close {
+  font-size:11px;
+  opacity:0.9;
+}
+
+.option-bar {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:6px 8px;
+  border-radius:6px;
+  cursor:pointer;
+  transition:all 0.2s;
+}
+.option-bar:hover {
+  background:rgba(102, 126, 234, 0.08);
+}
+.option-bar-active {
+  background:rgba(16, 185, 129, 0.12);
+  border:1px solid #10b981;
+}
+.option-bar-active:hover {
+  background:rgba(16, 185, 129, 0.18);
+}
 </style>

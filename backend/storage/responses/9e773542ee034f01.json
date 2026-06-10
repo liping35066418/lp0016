@@ -1,0 +1,17 @@
+{
+  "id": "9e773542ee034f01",
+  "surveyId": "af2ccba5cda8465d",
+  "accessToken": "3af34b38d9214248",
+  "answers": [
+    {
+      "questionId": "q_lqwtki88",
+      "value": "o_3t25jw"
+    }
+  ],
+  "userInfo": {
+    "ip": "::1",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+  },
+  "submittedAt": 1781081794468,
+  "submittedAtStr": "2026-06-10 08:56:34"
+}

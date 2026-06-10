@@ -14,6 +14,27 @@ function isEmptyAnswer(value, type) {
   return false;
 }
 
+function filterResponsesByConditions(responses, filters, survey) {
+  if (!filters || filters.length === 0) return responses;
+  const questionMap = {};
+  (survey?.questions || []).forEach(q => { questionMap[q.id] = q; });
+  return responses.filter(resp => {
+    return filters.every(f => {
+      const answer = resp.answers.find(a => a.questionId === f.questionId);
+      if (!answer) return false;
+      const q = questionMap[f.questionId];
+      const qType = q?.type;
+      if (qType === 'radio') {
+        return answer.value === f.optionValue;
+      }
+      if (qType === 'checkbox') {
+        return Array.isArray(answer.value) && answer.value.includes(f.optionValue);
+      }
+      return false;
+    });
+  });
+}
+
 function validateResponse(survey, answers) {
   const errors = [];
   const answerMap = {};
@@ -165,7 +186,17 @@ router.post('/', (req, res) => {
 router.get('/survey/:surveyId', (req, res) => {
   try {
     const { surveyId } = req.params;
-    const { startTime, endTime, page = 1, pageSize = 20 } = req.query;
+    const { startTime, endTime, filters, page = 1, pageSize = 20 } = req.query;
+
+    let parsedFilters = [];
+    if (filters) {
+      try {
+        parsedFilters = JSON.parse(filters);
+        if (!Array.isArray(parsedFilters)) parsedFilters = [];
+      } catch (e) {
+        parsedFilters = [];
+      }
+    }
 
     const rIndex = readJSON(responseIndexFile);
     let list = rIndex.responses.filter(r => r.surveyId === surveyId);
@@ -181,17 +212,26 @@ router.get('/survey/:surveyId', (req, res) => {
 
     list.sort((a, b) => b.submittedAt - a.submittedAt);
 
-    const total = list.length;
-    const start = (parseInt(page) - 1) * parseInt(pageSize);
-    const paged = list.slice(start, start + parseInt(pageSize));
-
-    const details = paged.map(meta => {
+    let allResponses = list.map(meta => {
       const file = path.join(responseDir, `${meta.id}.json`);
       if (fs.existsSync(file)) {
         return readJSON(file);
       }
-      return meta;
-    });
+      return null;
+    }).filter(Boolean);
+
+    if (parsedFilters.length > 0) {
+      const surveyFile = path.join(surveyDir, `${surveyId}.json`);
+      let survey = null;
+      if (fs.existsSync(surveyFile)) {
+        survey = readJSON(surveyFile);
+      }
+      allResponses = filterResponsesByConditions(allResponses, parsedFilters, survey);
+    }
+
+    const total = allResponses.length;
+    const start = (parseInt(page) - 1) * parseInt(pageSize);
+    const paged = allResponses.slice(start, start + parseInt(pageSize));
 
     res.json({
       success: true,
@@ -199,7 +239,7 @@ router.get('/survey/:surveyId', (req, res) => {
         total,
         page: parseInt(page),
         pageSize: parseInt(pageSize),
-        list: details
+        list: paged
       }
     });
   } catch (err) {

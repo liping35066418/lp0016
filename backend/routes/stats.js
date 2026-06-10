@@ -14,16 +14,47 @@ function isEmptyAnswer(value, type) {
   return false;
 }
 
+function filterResponsesByConditions(responses, filters, survey) {
+  if (!filters || filters.length === 0) return responses;
+  const questionMap = {};
+  (survey?.questions || []).forEach(q => { questionMap[q.id] = q; });
+  return responses.filter(resp => {
+    return filters.every(f => {
+      const answer = resp.answers.find(a => a.questionId === f.questionId);
+      if (!answer) return false;
+      const q = questionMap[f.questionId];
+      const qType = q?.type;
+      if (qType === 'radio') {
+        return answer.value === f.optionValue;
+      }
+      if (qType === 'checkbox') {
+        return Array.isArray(answer.value) && answer.value.includes(f.optionValue);
+      }
+      return false;
+    });
+  });
+}
+
 router.get('/survey/:surveyId', (req, res) => {
   try {
     const { surveyId } = req.params;
-    const { startTime, endTime } = req.query;
+    const { startTime, endTime, filters } = req.query;
 
     const surveyFile = path.join(surveyDir, `${surveyId}.json`);
     if (!fs.existsSync(surveyFile)) {
       return res.status(404).json({ success: false, message: '问卷不存在' });
     }
     const survey = readJSON(surveyFile);
+
+    let parsedFilters = [];
+    if (filters) {
+      try {
+        parsedFilters = JSON.parse(filters);
+        if (!Array.isArray(parsedFilters)) parsedFilters = [];
+      } catch (e) {
+        parsedFilters = [];
+      }
+    }
 
     const rIndex = readJSON(responseIndexFile);
     let responseIds = rIndex.responses
@@ -36,12 +67,16 @@ router.get('/survey/:surveyId', (req, res) => {
       })
       .map(r => r.id);
 
-    const responses = responseIds
+    let responses = responseIds
       .map(id => {
         const f = path.join(responseDir, `${id}.json`);
         return fs.existsSync(f) ? readJSON(f) : null;
       })
       .filter(Boolean);
+
+    if (parsedFilters.length > 0) {
+      responses = filterResponsesByConditions(responses, parsedFilters, survey);
+    }
 
     const questionStats = survey.questions.map(q => {
       const stat = {
@@ -111,13 +146,9 @@ router.get('/survey/:surveyId', (req, res) => {
     });
 
     const dailyData = {};
-    responseIds.forEach(id => {
-      const f = path.join(responseDir, `${id}.json`);
-      if (fs.existsSync(f)) {
-        const r = readJSON(f);
-        const dateKey = r.submittedAtStr.substring(0, 10);
-        dailyData[dateKey] = (dailyData[dateKey] || 0) + 1;
-      }
+    responses.forEach(r => {
+      const dateKey = r.submittedAtStr.substring(0, 10);
+      dailyData[dateKey] = (dailyData[dateKey] || 0) + 1;
     });
     const dailyTrend = Object.keys(dailyData)
       .sort()
